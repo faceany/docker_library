@@ -54,6 +54,7 @@ getArches() {
 			| xargs bashbrew cat --format '[{{ .RepoName }}:{{ .TagName }}]="{{ join " " .TagEntry.Architectures }}"'
 	) )"
 }
+
 getArches 'postgres'
 
 cat <<-EOH
