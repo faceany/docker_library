@@ -102,11 +102,25 @@ for version; do
 		dir="$version/$variant"
 		commit="$(dirCommit "$dir")"
 
-		parent="$(awk 'toupper($1) == "FROM" { print $2 }' "$dir/Dockerfile")"
-		arches="amd64"
+	 	#parent=("$(awk 'toupper($1) == "FROM" { print $3 }' "$dir/Dockerfile")" | sort -u)
+   		parent=$((awk 'toupper($1) == "FROM" { print $3 }' "$dir/Dockerfile") |sort -u)
+		arches="${parentRepoToArches[$parent]}"
 
 		variantAliases=( "${versionAliases[@]/%/-$variant}" )
 		variantAliases=( "${variantAliases[@]//latest-/}" )
+
+		case "$variant" in
+			"$debian")
+				variantAliases=(
+					"${versionAliases[@]}"
+					"${variantAliases[@]}"
+				)
+				;;
+			alpine"$alpine")
+				variantAliases+=( "${versionAliases[@]/%/-alpine}" )
+				variantAliases=( "${variantAliases[@]//latest-/}" )
+				;;
+		esac
 
 		echo
 		cat <<-EOE
@@ -117,14 +131,3 @@ for version; do
 		EOE
 	done
 done
-getArches() {
-    local repo="$1"; shift
-    local officialImagesUrl='https://github.com/docker-library/official-images/raw/master/library/debian'
-
-    # Fetch the content from the fixed URL and process it
-    eval "declare -g -A parentRepoToArches=( $(
-        curl -s "$officialImagesUrl" \
-        | xargs bashbrew cat --format '[{{ .RepoName }}:{{ .TagName }}]="{{ join " " .TagEntry.Architectures }}"'
-    ) )"
-}
-getArches 'postgres'
